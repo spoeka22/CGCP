@@ -16,6 +16,82 @@ def extract_data(sequence,injection_number, detector):
     chfile = sequence.injections[injection_number].raw_files[detector]
     return chfile.times, chfile.values 
 
+#extracts information given in the injection filename and info
+def extract_sample_info(sequence):
+    # this  should also find pressure from gas data to automatically include
+    # that in the calibration
+    # global concentration_list, name_list, calibration, injection, conc
+    global injection
+    concentration_list = []
+    name_list = []
+    calibration = False
+    pressure_list = []
+    for injection in sequence.injections:
+        sample_info = injection.metadata['sample_info'][1:-5]
+        sample_name_chromatogram = injection.metadata['sample_name']
+        print("Sample info= " + str(sample_info))
+        print("Sample name in chromatogram = " + str(sample_name_chromatogram))
+        #find the right sample name to use for saving the plots/data
+
+        if "µM" in sample_info:
+            print("This is a calibration sequence.")
+            calibration = True
+            conc_info = sample_info[:sample_info.find("µM")]
+            conc = int(''.join(filter(str.isdigit,
+                                      conc_info)))  # this only works if there is only ONE number in the string before "µM" and that is the concentration
+            concentration_list.append(conc)
+        elif "AW_" in sample_info:
+            print("AW in sample info - taken as sample name.")
+            sample_name = sample_info[sample_info.find("AW_"):]
+            name_list.append(sample_name)
+        elif "Pd" in sample_name_chromatogram or "Au" in sample_name_chromatogram:  # the idea is that even if the naming if AW is not given, that the sample name is found
+            print("Au or Pd sample. Name taken from chromatogram sample name.")
+            sample_name = sample_name_chromatogram
+            name_list.append(sample_name)
+        elif "blank" in sample_name_chromatogram:
+            print("blank sample  - name taken from chromatogram sample name.")
+            sample_name = sample_name_chromatogram
+            name_list.append(sample_name)
+        else:  # not sure if that actually makes sense, but leave it for now (potentially needs to be changed, also depends on how systematically I name the samples
+            print("Sample info chosen as name.")
+            sample_name = sample_info
+            name_list.append(sample_name)
+        print("Selected sample name for evaluation: " + str(sample_name))
+        #additional information: pressure (for gas injections)
+        if "p=" in sample_name_chromatogram or "p =" in sample_name_chromatogram:
+            pressure_string = sample_name_chromatogram
+        elif "p=" in sample_info or "p =" in sample_info:
+            pressure_string = sample_info
+        else:
+            pressure_string = "=0"
+        if "mbar" in pressure_string:
+            pressure = float(pressure_string[pressure_string.find("=")+1:pressure_string.find("mbar")])
+        else:
+            pressure = float(pressure_string[pressure_string.find("=")+1:-1])
+        print(pressure)
+        injection.metadata['pressure'] = pressure
+        pressure_list.append(pressure)
+
+    return concentration_list, name_list, calibration, pressure_list
+
+#general function to save plots as png and/or pdf
+def save_a_plot(output_path, plotname, pdf = True, png = True, dots_per_inch=300):
+    try:
+        if pdf == True:
+            plt.savefig(output_path + plotname + '.pdf', dpi=dots_per_inch, bbox_inches='tight')
+        if png == True:
+            plt.savefig(output_path + plotname + '.png', dpi= dots_per_inch, bbox_inches='tight')
+        plt.close()
+    except OSError as err:
+        print("OS error: {0}".format(err))
+        print("Output path contains invalid characters.")
+        new_filename = input("Enter new filename:")
+        if pdf == True:
+            plt.savefig(output_path + new_filename + '.pdf', dpi=dots_per_inch, bbox_inches='tight')
+        if png == True:
+            plt.savefig(output_path + new_filename + '.png', dpi= dots_per_inch, bbox_inches='tight')
+        plt.close()
+
 #step function
 def errorfunc(time, center, size, height):
     time = np.array(time)
@@ -127,6 +203,8 @@ def integrate_spectrum_linear(sequence, injection, detector, info, name, save_pl
         local_idx_peakmax = np.argmax(data_slice[1])
         # print("peakmax of " + str(data_slice[1][local_idx_peakmax]) + " at local index: " + str(local_idx_peakmax))
         # print(peak)
+        print("Peakmax for " + str(peak) + " found at: " + str(data_slice[0][local_idx_peakmax]) + " min.")
+
         try:
             local_idx_min_start = np.argmin(data_slice[1][:local_idx_peakmax])
 
@@ -135,15 +213,24 @@ def integrate_spectrum_linear(sequence, injection, detector, info, name, save_pl
             print("Now trying to find peak maxium iteratively.")
             # print("initial length data slice=" + str(len(data_slice[1])))
             while local_idx_peakmax < 10:
-                data_slice =(data_slice[0][int(len(data_slice[1])*0.01):],
-                            data_slice[1][int(len(data_slice[1])*0.01):])
+                data_slice =(data_slice[0][int(len(data_slice[1])*0.01):-1],
+                            data_slice[1][int(len(data_slice[1])*0.01):-1])
                 # print(data_slice)
                 # data_slice = new_slice
                 # print("new length data slice=" + str(len(data_slice[1])))
-                local_idx_peakmax = np.argmax(data_slice[1])
-                # print("local peak max index =" + str(local_idx_peakmax))
+                try:
+                    local_idx_peakmax = np.argmax(data_slice[1])
+                except ValueError:
+                    print("No peakmax found")
+                    break
+                # print("local peak max index = " + str(local_idx_peakmax))
                 # print(local_idx_peakmax < 10)
                 # print(data_slice[0][local_idx_peakmax], data_slice[1][local_idx_peakmax])
+            try:
+                print("Peakmax found at: " + str(data_slice[0][local_idx_peakmax]) + " min.")
+            except IndexError:
+                data_slice = (peak_time, peak_count)
+                local_idx_peakmax = 1
             local_idx_min_start = np.argmin(data_slice[1][:local_idx_peakmax])
 
         local_idx_min_end = np.argmin(data_slice[1][local_idx_peakmax:]) + local_idx_peakmax
@@ -165,7 +252,17 @@ def integrate_spectrum_linear(sequence, injection, detector, info, name, save_pl
         integral_BG_subtr = integral_peak - integral_peak_BG
         # print('For peak starting at t=' + str(spectrum[0][local_idx_min_start + start_slice]) + ': integral BG subtracted = ' + str(
         #     integral_BG_subtr) + " pA*s")
-        area=integral_BG_subtr
+
+        #for gas injections: correct for the pressure as given in the data info or name from GC file
+
+        try:
+            pressure = sequence.injections[injection].metadata['pressure']
+            print(pressure)
+            area = integral_BG_subtr/pressure*1015
+            print("Peak area normalized to atmospheric pressure.")
+        except KeyError:
+            area=integral_BG_subtr
+            print("No pressure for correction found.")
         area_error=0
 
         results_array[peak] = abs(area)
@@ -173,7 +270,8 @@ def integrate_spectrum_linear(sequence, injection, detector, info, name, save_pl
 
     #more details for plot
     time_frame = fig.get_xlim()
-    mask =  np.logical_and(spectrum[0] > time_frame[0] + time_frame[0]*0.1, spectrum[0] < time_frame[1])
+    mask =  np.logical_and(spectrum[0] > time_frame[0], spectrum[0] < time_frame[1])
+    # mask =  np.logical_and(spectrum[0] > time_frame[0] + time_frame[0]*0.1, spectrum[0] < time_frame[1])
     x_spec,y_spec = spectrum[0][mask], spectrum[1][mask]
     fig.plot(x_spec, y_spec, "k:")
     fig.legend(loc='upper right')
@@ -181,191 +279,10 @@ def integrate_spectrum_linear(sequence, injection, detector, info, name, save_pl
     fig.set_ylabel("Signal intensity / pA")
     fig.axes.set_title(name)
     if save_plots == True:
-        plt.savefig(output_path + '\FID_integrated_' + str(name) + '.pdf', dpi=300,
-                    bbox_inches='tight')
-        plt.savefig(output_path + '\FID_integrated_' + str(name) + '.png', dpi=300,
-                    bbox_inches='tight')
+        save_a_plot(output_path, '\\' + detector[0:4] +'_integrated_' + str(name), pdf = False)
 
 
     for peak in info[detector]:
         for motherpeak in info[detector][peak]['mother_peak']:
             results_array[motherpeak] = results_array[motherpeak] - results_array[peak]
     return results_array, error_array
-
-def CowGuin():
-    if os.name == 'nt':
-        clear = lambda: os.system('cls')
-    else:
-        clear = lambda: os.system('clear')
-    time.sleep(0.9)
-    clear()
-    print(' ')
-    print('    ')
-    print('   ')
-    print('   ')
-    print('     ')
-    print('   ')
-    print('        .--.             ^__^')
-    print('       |o_o |            (oo)\_______      ')
-    print('       |:_/ |            (__)\       )\    ')
-    print('      //   \ \               ||----w | *   ')
-    print('     (|     | )              ||     ||     ')
-    print('    /´\_   _/`\ ')
-    print('    \___)=(___/          * ')
-    print('                        \|/ ')
-    time.sleep(0.8)
-    clear()
-    print(' ')
-    print('  ______________________')
-    print('< Nice code for your GC! >      ')
-    print(' ------------------------     ')
-    print('   \                            ')
-    print('    \                          ')
-    print('        .--.             ^__^')
-    print('       |o_o |            (oo)\_______     ')
-    print('       |:_/ |            (__)\       )\    ')
-    print('      //   \ \               ||----w | *  ')
-    print('     (|     | )              ||     ||    ')
-    print('    /´\_   _/`\ ')
-    print('    \___)=(___/          * ')
-    print('                        \|/ ')
-    time.sleep(1.1)
-    clear()
-    print(' ')
-    print('    ')
-    print('   ')
-    print('   ')
-    print('     ')
-    print('   ')
-    print('        .--.             ^__^')
-    print('       |o_o |            (oo)\_______      ')
-    print('       |:_/ |            (__)\       )\    ')
-    print('      //   \ \               ||----w | *   ')
-    print('     (|     | )              ||     ||     ')
-    print('    /´\_   _/`\ ')
-    print('    \___)=(___/          * ')
-    print('                        \|/ ')
-    time.sleep(0.8)
-    clear()
-    print(' ')
-    print('    ')
-    print('   ')
-    print('   ')
-    print('     ')
-    print('   ')
-    print('        .--.             ^__^           /       ')
-    print('       |o_o |            (oo)\_______  /_´_       ')
-    print('       |:_/ |            (__)\       )\       ')
-    print('      //   \ \               ||----w | *      ')
-    print('     (|     | )              ||     ||        ')
-    print('    /´\_   _/`\ ')
-    print('    \___)=(___/          * ')
-    print('                        \|/ ')
-    time.sleep(0.8)
-    clear()
-    print(' ')
-    print('  ')
-    print('                                 ______________________')
-    print('                                < Beware of methane... >')
-    print('                                 ----------------------')
-    print('                                    /')
-    print('        .--.             ^__^           ')
-    print('       |o_o |            (oo)\_______         ')
-    print('       |:_/ |            (__)\       )\       ')
-    print('      //   \ \               ||----w | *      ')
-    print('     (|     | )              ||     ||        ')
-    print('    /´\_   _/`\ ')
-    print('    \___)=(___/          * ')
-    print('                        \|/ ')
-    time.sleep(1.1)
-    clear()
-
-def GcFridaySpecial():
-    if os.name == 'nt':
-        clear = lambda: os.system('cls')
-    else:
-        clear = lambda: os.system('clear')
-    question = input('Is it friday?(y/n): ')
-    if question == 'y':
-        time.sleep(1.1)
-        clear()
-        print(' FRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAY ')
-        print('     ______      ______      ______       __       _______      _______  _________   _______      ')
-        print('   .´ ___  |   .´ ___  |    |_   __ \    /  \     |_   __ \    /  ___  ||_   ___  | |_   __ \     ')
-        print('  / .´   \_|  / .´   \_|      | |__) |  / /\ \      | |__) |  |  (__ \_|  | |_  \_|   | |__) |    ')
-        print('  | |    ____ | |             |  ___/  / ____ \     |  __ /    `.___`-.   |  _|  _    |  __ /     ')
-        print('  \ `.___]  _|\ `.___.´\     _| |_   _/ /    \ \_  _| |  \ \_ |`\____) | _| |___/ |  _| |  \ \_   ')
-        print('   `._____.´   `._____.´    |_____| |____|  |____||____| |___||_______.´|_________| |____| |___|  ')
-        print(' FRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAY ')  
-        print(' For use at DTU Physics                                                      GC Parser 1.2 (2018) ')
-        time.sleep(1.1)
-        clear()
-        print(' FRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAY ')
-        print('     ______      ______      ______       __       _______      _______  _________   _______      ')
-        print('   .´ ___  |   .´ ___  |    |_   __ \    /  \     |_   __ \    /  ___  ||_   ___  | |_   __ \     ')
-        print('  / .´   \_|  / .´   \_|      | |__) |  / /\ \      | |__) |  |  (__ \_|  | |_  \_|   | |__) |    ')
-        print('  | |    ____ | |             |  ___/  / ____ \     |  __ /    `.___`-.   |  _|  _    |  __ /     ')
-        print('  \ `.___]  _|\ `.___.´\     _| |_   _/ /    \ \_  _| |  \ \_ |`\____) | _| |___/ |  _| |  \ \_   ')
-        print('   `._____.´   `._____.´    |_____| |____|  |____||____| |___||_______.´|_________| |____| |___|  ')
-        print(' FRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAY ')  
-        print(' For use at DTU Physics... Also on Fridays!                                  GC Parser 1.2 (2018) ')
-        CowGuin()
-        clear()
-        print(' FRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAY ')
-        print('     ______      ______      ______       __       _______      _______  _________   _______      ')
-        print('   .´ ___  |   .´ ___  |    |_   __ \    /  \     |_   __ \    /  ___  ||_   ___  | |_   __ \     ')
-        print('  / .´   \_|  / .´   \_|      | |__) |  / /\ \      | |__) |  |  (__ \_|  | |_  \_|   | |__) |    ')
-        print('  | |    ____ | |             |  ___/  / ____ \     |  __ /    `.___`-.   |  _|  _    |  __ /     ')
-        print('  \ `.___]  _|\ `.___.´\     _| |_   _/ /    \ \_  _| |  \ \_ |`\____) | _| |___/ |  _| |  \ \_   ')
-        print('   `._____.´   `._____.´    |_____| |____|  |____||____| |___||_______.´|_________| |____| |___|  ')
-        print(' FRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAY ')  
-        print(' For use at DTU Physics... Also on Fridays!                                  GC Parser 1.2 (2018) ')    
-    if question == 'n':
-        print('.. hmm... My calendar says so...')
-        question = input('Are you sure?(y/n): ')
-    if question == 'y':
-        clear()
-        print('----------------------------------------------------------------------------------------------')
-        print('   ______      ______      ______       __       _______      _______  _________   _______    ')
-        print(' .´ ___  |   .´ ___  |    |_   __ \    /  \     |_   __ \    /  ___  ||_   ___  | |_   __ \   ')
-        print('/ .´   \_|  / .´   \_|      | |__) |  / /\ \      | |__) |  |  (__ \_|  | |_  \_|   | |__) |  ')
-        print('| |    ____ | |             |  ___/  / ____ \     |  __ /    `.___`-.   |  _|  _    |  __ /   ')
-        print('\ `.___]  _|\ `.___.´\     _| |_   _/ /    \ \_  _| |  \ \_ |`\____) | _| |___/ |  _| |  \ \_ ')
-        print(' `._____.´   `._____.´    |_____| |____|  |____||____| |___||_______.´|_________| |____| |___|')
-        print('----------------------------------------------------------------------------------------------')  
-        print('For use at DTU Physics                                                    GC Parser 1.2 (2018)')
-    else:
-        print('Yes, I thought so to')
-        time.sleep(1.1)
-        clear()
-        print(' FRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAY ')
-        print('     ______      ______      ______       __       _______      _______  _________   _______      ')
-        print('   .´ ___  |   .´ ___  |    |_   __ \    /  \     |_   __ \    /  ___  ||_   ___  | |_   __ \     ')
-        print('  / .´   \_|  / .´   \_|      | |__) |  / /\ \      | |__) |  |  (__ \_|  | |_  \_|   | |__) |    ')
-        print('  | |    ____ | |             |  ___/  / ____ \     |  __ /    `.___`-.   |  _|  _    |  __ /     ')
-        print('  \ `.___]  _|\ `.___.´\     _| |_   _/ /    \ \_  _| |  \ \_ |`\____) | _| |___/ |  _| |  \ \_   ')
-        print('   `._____.´   `._____.´    |_____| |____|  |____||____| |___||_______.´|_________| |____| |___|  ')
-        print(' FRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAY ')  
-        print(' For use at DTU Physics                                                      GC Parser 1.2 (2018) ')
-        time.sleep(1.1)
-        clear()
-        print(' FRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAY ')
-        print('     ______      ______      ______       __       _______      _______  _________   _______      ')
-        print('   .´ ___  |   .´ ___  |    |_   __ \    /  \     |_   __ \    /  ___  ||_   ___  | |_   __ \     ')
-        print('  / .´   \_|  / .´   \_|      | |__) |  / /\ \      | |__) |  |  (__ \_|  | |_  \_|   | |__) |    ')
-        print('  | |    ____ | |             |  ___/  / ____ \     |  __ /    `.___`-.   |  _|  _    |  __ /     ')
-        print('  \ `.___]  _|\ `.___.´\     _| |_   _/ /    \ \_  _| |  \ \_ |`\____) | _| |___/ |  _| |  \ \_   ')
-        print('   `._____.´   `._____.´    |_____| |____|  |____||____| |___||_______.´|_________| |____| |___|  ')
-        print(' FRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAY ')  
-        print(' For use at DTU Physics... Also on Fridays!                                  GC Parser 1.2 (2018) ')
-        CowGuin()
-        clear()
-        print(' FRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAY ')
-        print('     ______      ______      ______       __       _______      _______  _________   _______      ')
-        print('   .´ ___  |   .´ ___  |    |_   __ \    /  \     |_   __ \    /  ___  ||_   ___  | |_   __ \     ')
-        print('  / .´   \_|  / .´   \_|      | |__) |  / /\ \      | |__) |  |  (__ \_|  | |_  \_|   | |__) |    ')
-        print('  | |    ____ | |             |  ___/  / ____ \     |  __ /    `.___`-.   |  _|  _    |  __ /     ')
-        print('  \ `.___]  _|\ `.___.´\     _| |_   _/ /    \ \_  _| |  \ \_ |`\____) | _| |___/ |  _| |  \ \_   ')
-        print('   `._____.´   `._____.´    |_____| |____|  |____||____| |___||_______.´|_________| |____| |___|  ')
-        print(' FRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAY ')  
-        print(' For use at DTU Physics... Also on Fridays!                                  GC Parser 1.2 (2018) ')

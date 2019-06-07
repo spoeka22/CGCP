@@ -7,7 +7,7 @@ import shutil
 folders = []
 filenames = OrderedDict()
 
-folder_path = r'C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\GC product analysis\ANNA_POR 2019-05-27 21-01-34'
+folder_path = r'C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\Calibration\new GC calibration\20190520 new calibration\GC_RAMP_PROPENE-method'
 filename_add = ""
 
 #this should be able to go through the subfolders of a folder and in each of these folders create 2 empty CSV files: 
