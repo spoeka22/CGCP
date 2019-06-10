@@ -280,6 +280,8 @@ def integrate_spectrum_linear(sequence, injection, detector, info, name, save_pl
     fig.axes.set_title(name)
     if save_plots == True:
         save_a_plot(output_path, '\\' + detector[0:4] +'_integrated_' + str(name), pdf = False)
+    else:
+        plt.show()
 
 
     for peak in info[detector]:

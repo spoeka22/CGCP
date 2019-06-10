@@ -219,14 +219,14 @@ if True:
                 spectrum_area = integrate_spectrum_linear(sequence,injection_number,detector, fit_info, name, save_plots, output_path)
                 for peak in fit_info[detector]:
                     integration_data[detector + "raw"][peak].append(spectrum_area[0][peak])
-                # plt.show()
+                plt.show()
         else:
             integration_data[detector + "raw"]['sample_info'] = name_list
             for injection_number, name in itertools.zip_longest(range(0,len(sequence.injections),1), name_list):
                 spectrum_area = integrate_spectrum_linear(sequence, injection_number, detector, fit_info, name, save_plots, output_path)
                 for peak in fit_info[detector]:
                     integration_data[detector + "raw"][peak].append(spectrum_area[0][peak])
-                # plt.show()
+                plt.draw()
             #save the integration data as csv
             save_to_csv(integration_data[detector + "raw"], output_path, name + detector + "_raw_integrals")
 
@@ -294,13 +294,23 @@ if True:
                         try:
                             # print("FID integration_data[detector + "conc"][peak] for peak: " + str(peak))
                             # print(integration_data[detector + "conc"][peak])
+                            #in order to make this work in one flow for both liquid and gas products, it makes sense
+                            #to calculate mols first depending on what product we're talking about and then calculate pcd
+                            #and fe from that
+                            if peak == "CO2" or peak == "CO" or peak == "CO_TCD" or peak =="H2":
+                                no_mols = [1.015* c * 0.06/100/(0.08314*295) for c in integration_data[detector + "conc"][peak +"_conc"]] #calculation of mols in 60mL gas loop according to ideal gas law at 25C and atomsopheric pressure (normalisation of concentration to that pressure earlier on!)
+                                integration_data[detector + "mols"][peak + "_mols"] = no_mols
+                            else:
+                                no_mols = [c * 10 ** (-6) * ec_dat['liquid_volume'] * 10 ** (-3) for c in integration_data[detector + "conc"][peak +"_conc"]]
+                                integration_data[detector + "mols"][peak + "_mols"] = no_mols
+
                             #input units: c: µmol/L, liquid volume: mL, exp length: min, electrode area: cm2  -> output: µA/cm2
-                            pcd = [(c * 10 ** (-6) * ec_dat['liquid_volume'] * 10 ** (-3) * electrons[peak] * 96485 / (exp_length * 60 * ec_dat['electrode_area']) * 10 ** 6) for c, ec_dat in zip(integration_data[detector + "conc"][peak +"_conc"], echem_data)]
+                            pcd = [(mols * electrons[peak] * 96485 / (exp_length * 60 * ec_dat['electrode_area']) * 10 ** 6) for mols, ec_dat in zip(integration_data[detector + "mols"][peak +"_mols"], echem_data)]
                             integration_data[detector + "pcd"][peak + "_pcd"] = pcd
-                            fe = [c * 10 ** (-6) * ec_dat['liquid_volume'] * 10 ** (-3) * electrons[peak] * 96485 /  ec_dat['total_charge'] * 100 for  c, ec_dat in zip(integration_data[detector + "conc"][peak + "_conc"], echem_data)]
+                            fe = [mols * electrons[peak] * 96485 /  ec_dat['total_charge'] * 100 for  mols, ec_dat in zip(integration_data[detector + "mols"][peak +"_mols"], echem_data)]
                             integration_data[detector + "fe"][peak + "_fe"]= fe
                         except KeyError:
-                            print("No calibration data found for " + str(peak) + ", no echem data evaluated.")
+                            print("No echem information found for " + str(peak) + ", no echem data evaluated.")
                 save_to_csv(integration_data[detector + "pcd"], output_path, integration_data[detector + "raw"]["sample_info"][-1] + "_partial_current_density")
                 print("Partial current density saved: " + str(integration_data[detector + "pcd"]))
                 save_to_csv(integration_data[detector + "fe"], output_path, integration_data[detector + "raw"]["sample_info"][-1] + "_FE")
@@ -311,8 +321,11 @@ for detector in detector_keys:
     integration_data_to_save.update(integration_data[detector + "raw"])
     if conc_eval == True:
       integration_data_to_save.update(integration_data[detector + "conc"])
+    try:
       integration_data_to_save.update(integration_data[detector + "pcd"])
       integration_data_to_save.update(integration_data[detector + "fe"])
+    except KeyError:
+      print("No electrochemical data saved.")
 save_to_csv(integration_data_to_save, output_path, integration_data[detector + "raw"]["sample_info"][-1] + "_all")
                 #need to write something to save this and plot this (and also in some way double check that what it does is actually correct - should be ok now)
 """
