@@ -64,10 +64,12 @@ def extract_sample_info(sequence):
             pressure_string = sample_info
         else:
             pressure_string = "=0"
+            # print(pressure_string)
+            # print(pressure_string[pressure_string.find("=")+1:])
         if "mbar" in pressure_string:
             pressure = float(pressure_string[pressure_string.find("=")+1:pressure_string.find("mbar")])
         else:
-            pressure = float(pressure_string[pressure_string.find("=")+1:-1])
+            pressure = float(pressure_string[pressure_string.find("=")+1:])
         print(pressure)
         injection.metadata['pressure'] = pressure
         pressure_list.append(pressure)

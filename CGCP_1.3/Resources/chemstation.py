@@ -451,7 +451,7 @@ class CHFile(object):
     # The start position of the data
     data_start = 6144
     # The versions of the file format supported by this implementation
-    supported_versions = {179}
+    supported_versions = {179} #should be 179
 
     def __init__(self, filepath):
         """Instantiate object

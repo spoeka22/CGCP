@@ -25,7 +25,10 @@ if sys.version_info.major < 3: #courtesy of Keni
 """
 #START MANUAL SETTINGS
 """ 
-exec(open("manual_settings.py").read()) #This solution is generally 
+#change the name according to which data should be analysed
+# exec(open("manual_settings.py").read()) #This solution is generally
+exec(open("manual_settings_liquids.py").read())
+
 
 
 """
@@ -103,7 +106,7 @@ def plot_vs_conc(data,title):
     # plt.show()
 
 #plotting of raw data for FID
-if False:
+if True:
 #setup of raw data
     spectrum_length = len(sequence.injections[0].raw_files[FID_key].values)-10 #hardcoded to exclude the last 10 points, since the spectra-length vary this value will be the reference for the length, and generally the sampling is high, so a GC-spectrum could be 10000-100000 points long
     # print(spectrum_length)
@@ -141,7 +144,7 @@ print(' ')
 """
 #Data treatment
 """
-if True:
+if False:
 #---comments below leftover from Thomas Smitshuysen
 #Next part will setup the tools for fitting. haah just joking. Numerical integration for the win!
 #though the background is fitted. But that fit could be done by anybody
@@ -316,18 +319,18 @@ if True:
                 save_to_csv(integration_data[detector + "fe"], output_path, integration_data[detector + "raw"]["sample_info"][-1] + "_FE")
                 print("FE saved: " + str(integration_data[detector + "fe"]))
 
-integration_data_to_save = {} #necessary to restructure dict to use the output function
-for detector in detector_keys:
-    integration_data_to_save.update(integration_data[detector + "raw"])
-    if conc_eval == True:
-      integration_data_to_save.update(integration_data[detector + "conc"])
-    try:
-      integration_data_to_save.update(integration_data[detector + "pcd"])
-      integration_data_to_save.update(integration_data[detector + "fe"])
-    except KeyError:
-      print("No electrochemical data saved.")
-save_to_csv(integration_data_to_save, output_path, integration_data[detector + "raw"]["sample_info"][-1] + "_all")
-                #need to write something to save this and plot this (and also in some way double check that what it does is actually correct - should be ok now)
+    integration_data_to_save = {} #necessary to restructure dict to use the output function
+    for detector in detector_keys:
+        integration_data_to_save.update(integration_data[detector + "raw"])
+        if conc_eval == True:
+          integration_data_to_save.update(integration_data[detector + "conc"])
+        try:
+          integration_data_to_save.update(integration_data[detector + "pcd"])
+          integration_data_to_save.update(integration_data[detector + "fe"])
+        except KeyError:
+          print("No electrochemical data saved.")
+    save_to_csv(integration_data_to_save, output_path, integration_data[detector + "raw"]["sample_info"][-1] + "_all")
+                    #need to write something to save this and plot this (and also in some way double check that what it does is actually correct - should be ok now)
 """
 #END of script
 """
@@ -335,7 +338,7 @@ save_to_csv(integration_data_to_save, output_path, integration_data[detector + "
 print('Program has finished')
 print(' ')
 
-# import code
-# code.interact(local=locals())
+import code
+code.interact(local=locals())
 
 # plt.show()

@@ -10,10 +10,13 @@ MANUEL SETTINGS SECTION
 # path = r"C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\Calibration\new GC calibration\data\ANNA_STANDARDS_NEWFLOW 2019-02-15 11-38-32 - Copy"
 
 # path = r'C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\GC product analysis\ANNA_POR_NEW_FLOWRATE 2019-05-23 16-56-13'
-path = r'C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\GC product analysis\ANNA_POR_NEW_FLOWRATE 2019-05-24 18-35-58'
+# path = r'C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\GC product analysis\ANNA_POR_NEW_FLOWRATE 2019-05-24 18-35-58'
 # path = r'C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\GC product analysis\ANNA_POR_NEW_FLOWRATE 2019-05-27 17-56-38'
+# path = r'C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\GC product analysis\ANNA_POR_NEW_FLOWRATE 2019-06-11 18-03-02'
+path = r'C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\GC product analysis\ANNA_POR_NEW_FLOWRATE 2019-06-12 12-42-58'
+
 output_path = r"C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\GC product analysis\Data analysis"
-save_plots = False
+save_plots = True
 
 
 #settings for calculation of concentration and electrochemical characteristics
@@ -21,17 +24,23 @@ calibration_path = r"C:\Users\annawi\Desktop\Projects\Propene oxidation\Experime
 echem = True #calculate FE and partial current density
 exp_length = 30 #CA duration in min
 echem_info = {"standard": {'liquid_volume': 12, 'total_charge': 0.1, 'electrode_area': 2},
-             "AW Au 006": {'liquid_volume': 12.85, 'total_charge': 0.033512166, 'electrode_area':16.9},
-"AW Au 007": {'liquid_volume': 12.65, 'total_charge': 0.114965769099999, 'electrode_area': 15.9},
-"AW Au 008": {'liquid_volume': 12.45, 'total_charge': 0.3871161945, 'electrode_area': 17.9},
-"AW AuPd 9010 004": {'liquid_volume': 12.35, 'total_charge': 0.5205460207, 'electrode_area': 15.9},
-"AW AuPd 9010 005": {'liquid_volume': 12.77, 'total_charge': 0.004187647997, 'electrode_area': 16.8},
-"AW AuPd 9010 006": {'liquid_volume': 12.7, 'total_charge': 0.5023260762534, 'electrode_area': 15.5},
-"AW AuPd 1090 003": {'liquid_volume': 12.5, 'total_charge': 0.4226389751, 'electrode_area': 55},
-"AW AuPd 9010 007": {'liquid_volume': 12.7, 'total_charge': 0.0430297937, 'electrode_area': 37.3},
-"AW AuPd 1090 004": {'liquid_volume': 12.9, 'total_charge': 0.06137843503, 'electrode_area': 16.8},
-"AW AuPd 1090 005": {'liquid_volume': 12.65, 'total_charge': 0.0438387044, 'electrode_area': 88.0},
-"AW AuPd 1090 006": {'liquid_volume': 12.55, 'total_charge': 0.226526717, 'electrode_area': 38.4},
+              "AW Au 006": {'liquid_volume': 12.85, 'total_charge': 0.033512166, 'electrode_area': 14.7},
+              "AW Au 007": {'liquid_volume': 12.65, 'total_charge': 0.114965769099999, 'electrode_area': 13.6},
+              "AW Au 008": {'liquid_volume': 12.45, 'total_charge': 0.3871161945, 'electrode_area': 15.5},
+              "AW Au 010": {'liquid_volume': 12.95, 'total_charge': 0.001000813, 'electrode_area': 8.1},
+              "AW Au 011": {'liquid_volume': 12.7, 'total_charge': 0.04860607073, 'electrode_area': 9.8},
+              "AW Au 012": {'liquid_volume': 12.6, 'total_charge': 0.337988198972, 'electrode_area': 8.4},
+              "AW AuPd 9010 004": {'liquid_volume': 12.35, 'total_charge': 0.5205460207, 'electrode_area': 13.8},
+              "AW AuPd 9010 005": {'liquid_volume': 12.77, 'total_charge': 0.004187647997, 'electrode_area': 14.6},
+              "AW AuPd 9010 006": {'liquid_volume': 12.7, 'total_charge': 0.5023260762534, 'electrode_area': 13.4},
+              "AW AuPd 1090 003": {'liquid_volume': 12.5, 'total_charge': 0.4226389751, 'electrode_area': 48.6},
+              "AW AuPd 9010 007": {'liquid_volume': 12.7, 'total_charge': 0.0430297937, 'electrode_area': 14.7},
+              "AW AuPd 1090 004": {'liquid_volume': 12.9, 'total_charge': 0.06137843503, 'electrode_area': 33.0},
+              "AW AuPd 1090 005": {'liquid_volume': 12.65, 'total_charge': 0.0438387044, 'electrode_area': 77.8},
+              "AW AuPd 1090 006": {'liquid_volume': 12.55, 'total_charge': 0.226526717, 'electrode_area': 34.0},
+              "AW AuPd 1090 010": {'liquid_volume': 12.75, 'total_charge': 0.5205460207, 'electrode_area': 12.9},
+              "AW AuPd 1090 011": {'liquid_volume': 12.8, 'total_charge': 0.5205460207, 'electrode_area': 13.5},
+              "AW AuPd 1090 012": {'liquid_volume': 12.75, 'total_charge': 0.5205460207, 'electrode_area': 12.15},
 
               }#total electrolyte volume in mL, total charge at the end of the CA experiment in C, electrode area cm2
 electrons = {} #dict to be filled below for electron transferred for each compound.

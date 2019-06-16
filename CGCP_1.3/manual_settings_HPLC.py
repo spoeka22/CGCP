@@ -6,28 +6,16 @@ This script holds the information needed in 'CGCP' in order to treat data.
 MANUEL SETTINGS SECTION
 """
 #Path to files. The path here, can be both relative and absolute
-path = r"C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\GC product analysis\single runs"
-# path = r"C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\Calibration\new GC calibration\data\ANNA_STANDARDS_NEWFLOW 2019-02-15 11-38-32 - Copy"
+path = r"C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\HPLC product analysis\ANNA001 2019-05-23 13-45-07"
 
-# path = r'C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\GC product analysis\ANNA_POR_NEW_FLOWRATE 2019-05-23 16-56-13'
-# path = r'C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\GC product analysis\ANNA_POR_NEW_FLOWRATE 2019-05-24 18-35-58'
-# path = r'C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\GC product analysis\ANNA_POR_NEW_FLOWRATE 2019-05-27 17-56-38'
+output_path = r'C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\HPLC product analysis\test'
 
-# path = r"C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\Calibration\new GC calibration\20190520 new calibration\GC_RAMP_PROPENE-method\1%CO in Ar" #\1%CO in Ar or 1%H2 in Ar
-
-# path = r"C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\Calibration\new GC calibration\20190520 new calibration\GC_RAMP_SHORT_CO2-method\HER in Ar" # \COO in 1%CO in Ar or HER in Ar
-#
-# output_path = r"C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\GC product analysis\Data analysis"
-
-output_path = r'C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\201905_PdAufoams\GC product analysis\single runs\data_analysis_test'
-
-# output_path = r"C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\Calibration\new GC calibration\20190520 new calibration\analysis\HER for volume" #CO and H2 in Ar, CO2 from CO, HER for volume
-save_plots = True
+save_plots = False
 
 #settings for calculation of concentration and electrochemical characteristics
-# calibration_path = r"C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\Calibration\new GC calibration\20190215_calibration\calibration_lines_HSGC150219.csv"
+
 calibration_path = r"C:\Users\annawi\Desktop\Projects\Propene oxidation\Experiments\Calibration\new GC calibration\calibration_lines_HSGC150219+GC200519.csv"
-echem = True #calculate FE and partial current density
+echem = False #calculate FE and partial current density
 exp_length = 30 #CA duration in min
 echem_info = {"standard": {'liquid_volume': 12, 'total_charge': 0.1, 'electrode_area': 2},
              "AW Au 005": {'liquid_volume': 12.85, 'total_charge': 0.033512166, 'electrode_area':16.9}, #should be 006, but for gas products wrong name
@@ -47,9 +35,9 @@ electrons = {} #dict to be filled below for electron transferred for each compou
 
 
 #keys for detectors, which will depend on the actual GC
-FID_key = 'FID1A.ch'
+FID_key = 'rid1A.ch'
 # TCD_key = None
-TCD_key = 'TCD2B.ch'
+TCD_key = 'dad1E.ch'
 
 detector_keys = [FID_key, TCD_key]
 
